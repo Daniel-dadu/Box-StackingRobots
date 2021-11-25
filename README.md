@@ -1,3 +1,3 @@
 # Repositorio para Actividad Integradora
 
-## Hecho por: Daniel Maldonado
+Hecho por: Daniel Maldonado
