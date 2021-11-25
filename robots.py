@@ -144,26 +144,26 @@ class Floor(Model):
 
         # Declaramos la cantidad de Robots, la cuál está establecida en las instrucciones de la actividad
         amountRobots = 5
-        # Declaramos el número de cajas en nuestro Grid
+        # Declaramos el número de cajas en nuestro Grid como atributo de nuestra clase
         self.amountBoxes = cantidadCajas
 
-        # Calculamos la cantidad de stacks necesarias para el núemro de cajas ingresado
+        # Calculamos la cantidad de stacks necesarias para el número de cajas ingresado
         self.amountStacks = self.amountBoxes // amountRobots + (0 if self.amountBoxes%amountRobots == 0 else 1)
 
         # Usamos un MultiGrid para poder colocar múltiples agentes en una misma celda
         self.grid = MultiGrid(self.x, self.y, torus=False)
 
-        # Declaramos nuestras variables que ingresará el usuario desde el input
+        # Variable tipo flag que será True cuando se ejecute el primer step de la simulación
+        self.simulationStarted = False
+
+        # Atributo que indica el tiempo en el que inicia la simulación
         self.startTime = 0
-        
+
         # Establecemos que el tiempo máximo de la simulación sea de 30 segundos
         self.maxTime = tiempoMaximo
 
         # Declaramos la variable que nos indica el tiempo actual que lleva la simulación
         self.actualTime = 0
-
-        # Cuando el counter haya aumentado (es decir, después de la primera llamada al constructor) se pueden pedir los datos de porcentaje de basura, número de Robots y tiempo máximo  
-        self.startTime = time.time()
 
         # Reiniciamos el conteo de movimientos en cada llamada al constructor
         self.totalMoves = 0
@@ -190,6 +190,10 @@ class Floor(Model):
           
 
     def step(self):
+        if(not self.simulationStarted):
+            # Declaramos el tiempo de inicio del tiempo como ahora 
+            self.startTime = time.time()
+            self.simulationStarted = True
         self.schedule.step()        
         self.actualTime = round(time.time() - self.startTime)
 
