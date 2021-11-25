@@ -8,6 +8,7 @@ from mesa.time import RandomActivation
 from mesa.visualization.modules import CanvasGrid
 from mesa.visualization.modules import TextElement
 from mesa.visualization.ModularVisualization import ModularServer
+from mesa.visualization.UserParam import UserSettableParameter
 
 class Robot(Agent):
     def __init__(self, model, pos):
@@ -15,6 +16,7 @@ class Robot(Agent):
         self.pos = pos
         self.myBox = None # Atributo que guarda una caja (agent) en caso de haberla levantado
         self.closestStackPos = (-1,-1) # Atributo que guarda la posición de la stack más cercana
+        self.lastPos = self.pos
 
     def step(self):
         # Usamos los vecinos de la posición actual considerando las diagonales
@@ -48,14 +50,25 @@ class Robot(Agent):
                         agent.wasTaken = True
                         # self.model.grid.remove_agent(agent)
                         return move
+            try:
+                posibleMoves.remove(self.lastPos)
+            except:
+                '''It was not possible to move to the lastPos'''
+
+            self.lastPos = self.pos
+
+            if(len(posibleMoves) == 0):
+                self.model.totalMoves -= 1
+                return self.pos
             
             return self.random.choice(posibleMoves)
         
         else:
-            if(len(self.model.boxStacks) < 3):
+            if(len(self.model.boxStacks) < self.model.amountStacks):
                 self.model.boxStacks[self.myBox.pos] = 1
                 self.myBox.isStacked = True
                 self.myBox = None
+                self.model.boxesStacked += 1
                 return self.random.choice(next_moves)
             
             else:
@@ -78,17 +91,16 @@ class Robot(Agent):
                     self.myBox.isStacked = True
                     
                     # Sumamos 1 elemento a dicha stack
-                    print("Box stacks: ", self.model.boxStacks)
-                    print("Best move pos: ", bestMove[1])
+                    print("Boxes stacked: ", self.model.boxesStacked)
                     self.model.boxStacks[bestMove[1]] += 1
-                    # Verificamos si dicha stack está llena
-                    if(self.model.boxStacks[bestMove[1]] == 5):
-                        self.model.stacksCompleted += 1
+                    # Aumentamos el número de cajas en stacks
+                    self.model.boxesStacked += 1
                     
                     # Reestablecemos la posición del stack más cercano y nos quitamos la caja
                     self.closestStackPos = (-1,-1)
                     self.myBox = None
 
+                    self.model.totalMoves -= 1
                     return self.pos
                 
                 return bestMove[1]
@@ -112,15 +124,12 @@ class Box(Agent):
      def __init__(self, model, pos):
         super().__init__(model.next_id(), model)
         self.pos = pos
-        self.isStacked = False
         self.wasTaken = False
+        self.isStacked = False
 
 class Floor(Model):
-    # Declaramos estos como atributos de la clase para poder usarlos en las demás clases que 
-    # tengan acceso al modelo
-    totalTime = 0
 
-    def __init__(self):
+    def __init__(self, cantidadCajas = 15, tiempoMaximo = 30):
         super().__init__()
         self.schedule = RandomActivation(self)
 
@@ -128,13 +137,18 @@ class Floor(Model):
         self.x = 20
         self.y = 20
 
+        # Creamos el diccionario que guardará en su key la posición de la stack y en su value la cantidad de cajas que tiene dicha stack
         self.boxStacks = {}
-        self.stacksCompleted = 0
+        # También creamos la variable que indicará la cantidad de cajas que se han metido en una stack
+        self.boxesStacked = 0
 
         # Declaramos la cantidad de Robots, la cuál está establecida en las instrucciones de la actividad
-        cantRobots = 5
+        amountRobots = 5
         # Declaramos el número de cajas en nuestro Grid
-        cantBoxes = 15
+        self.amountBoxes = cantidadCajas
+
+        # Calculamos la cantidad de stacks necesarias para el núemro de cajas ingresado
+        self.amountStacks = self.amountBoxes // amountRobots + (0 if self.amountBoxes%amountRobots == 0 else 1)
 
         # Usamos un MultiGrid para poder colocar múltiples agentes en una misma celda
         self.grid = MultiGrid(self.x, self.y, torus=False)
@@ -143,7 +157,10 @@ class Floor(Model):
         self.startTime = 0
         
         # Establecemos que el tiempo máximo de la simulación sea de 30 segundos
-        self.maxTime = 100
+        self.maxTime = tiempoMaximo
+
+        # Declaramos la variable que nos indica el tiempo actual que lleva la simulación
+        self.actualTime = 0
 
         # Cuando el counter haya aumentado (es decir, después de la primera llamada al constructor) se pueden pedir los datos de porcentaje de basura, número de Robots y tiempo máximo  
         self.startTime = time.time()
@@ -152,7 +169,7 @@ class Floor(Model):
         self.totalMoves = 0
 
         # Creamos una lista con números aleatorios en el rango de la basura que desea el usuario
-        randomNumsList = random.sample(range(self.x*self.y), cantBoxes + cantRobots)
+        randomNumsList = random.sample(range(self.x*self.y), self.amountBoxes + amountRobots)
 
         count = 0
         # Insertamos la basura iterativamente en posiciones aleatorias
@@ -160,7 +177,7 @@ class Floor(Model):
             posY = i // self.x
             posX = i % self.x
             # Primero creamos los 5 robots
-            if(count < 5):
+            if(count < amountRobots):
                 robot = Robot(self, (posX, posY))
                 self.grid.place_agent(robot, robot.pos)
                 self.schedule.add(robot)
@@ -174,10 +191,10 @@ class Floor(Model):
 
     def step(self):
         self.schedule.step()        
-        self.totalTime = round(time.time() - self.startTime)
+        self.actualTime = round(time.time() - self.startTime)
 
         # Si el tiempo actual sobrepasa el tiempo en el que debe terminar la simulación, se detiene la simulación
-        if(self.startTime + self.maxTime < time.time() or self.stacksCompleted == 3):
+        if(self.startTime + self.maxTime < time.time() or self.boxesStacked == self.amountBoxes):
             self.running = False
             
 # creamos la clase de TextResults, la cual nos devuelve una serie de etiquetas de texto con los resultados obtenidos durante y al final de la simulación. 
@@ -185,7 +202,7 @@ class Floor(Model):
 class TextResults(TextElement):
     def render(self, model):
         return f"""
-            <br>Tiempo necesario hasta que todas las celdas estén limpias (o se haya llegado al tiempo máximo): <b>{model.totalTime} segundos </b>
+            <br>Tiempo que lleva la simulación: <b>{model.actualTime} segundos </b>
             <hr>
             Número de movimientos realizados por todos los agentes: <b>{model.totalMoves} movimientos</b>
         """
@@ -201,6 +218,12 @@ def agent_portrayal(agent):
 grid = CanvasGrid(agent_portrayal, 20, 20, 500, 500)
 
 # Hacemos uso de la funcion de UserSettableParameter, la cual nos da una serie de widgets que nos permiten tener una mejor interacción con la simulación a traves de sliders, inputs de texto, entre otros, lo que nos permite manipuilar facilmente los valores iniciales.
-server = ModularServer(Floor, [grid, TextResults()], "Robots Apiladores", {})
+server = ModularServer(Floor, [grid, TextResults()], "Robots Apiladores", {
+    # A traves de un drop down box para ingresar el total de robots.
+    "cantidadCajas": UserSettableParameter("number", "Número de robots", value=15), 
+
+    # A traves de un drop down box para ingresar el la duracion máxima.
+    "tiempoMaximo": UserSettableParameter("number", "Tiempo máximo de simulación (segundos)", value=30),
+})
 server.port = 8573
 server.launch()
