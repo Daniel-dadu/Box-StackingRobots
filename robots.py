@@ -25,7 +25,6 @@ class Robot(Agent):
         
         # It has to select a neighbor that is not a stack/robot/box
         next_move = self.getMove(next_moves)
-        print(self.model.boxStacks)
 
         # Movemos el robot a su nueva posición
         self.model.grid.move_agent(self, next_move)
@@ -91,7 +90,6 @@ class Robot(Agent):
                     self.myBox.isStacked = True
                     
                     # Sumamos 1 elemento a dicha stack
-                    print("Boxes stacked: ", self.model.boxesStacked)
                     self.model.boxStacks[bestMove[1]] += 1
                     # Aumentamos el número de cajas en stacks
                     self.model.boxesStacked += 1
@@ -224,7 +222,7 @@ grid = CanvasGrid(agent_portrayal, 20, 20, 500, 500)
 # Hacemos uso de la funcion de UserSettableParameter, la cual nos da una serie de widgets que nos permiten tener una mejor interacción con la simulación a traves de sliders, inputs de texto, entre otros, lo que nos permite manipuilar facilmente los valores iniciales.
 server = ModularServer(Floor, [grid, TextResults()], "Robots Apiladores", {
     # A traves de un drop down box para ingresar el total de robots.
-    "cantidadCajas": UserSettableParameter("number", "Número de robots", value=15), 
+    "cantidadCajas": UserSettableParameter("number", "Número de cajas", value=15), 
 
     # A traves de un drop down box para ingresar el la duracion máxima.
     "tiempoMaximo": UserSettableParameter("number", "Tiempo máximo de simulación (segundos)", value=30),
