@@ -14,8 +14,6 @@ class Robot(Agent):
         self.closestStackPos = (-1,-1) # Atributo que guarda la posición de la stack más cercana
         self.lastPos = self.pos
         
-        # self.height = 0
-
     def step(self):
         # Usamos los vecinos de la posición actual considerando las diagonales
         next_moves = self.model.grid.get_neighborhood(self.pos, moore=False)
@@ -42,10 +40,12 @@ class Robot(Agent):
                     posibleMoves.append(move)
                 for agent in angentsList:
                     # Si la casilla vecina tiene una caja, la recojemos
-                    if(str(type(agent).__name__) == "Box" and not agent.wasTaken):
+                    if(str(type(agent).__name__) == "Box" and not agent.isMoving and not agent.isStacked):
                         self.myBox = agent
-                        agent.wasTaken = True
-                        # self.model.grid.remove_agent(agent)
+                        self.myBox.isMoving = True
+                        self.myBox.height = 3.5
+
+                        self.model.grid.move_agent(self.myBox, move)
                         return move
             try:
                 posibleMoves.remove(self.lastPos)
@@ -57,12 +57,13 @@ class Robot(Agent):
             if(len(posibleMoves) == 0):
                 self.model.totalMoves -= 1
                 return self.pos
-            
+
             return self.random.choice(posibleMoves)
         
         else:
             if(len(self.model.boxStacks) < self.model.amountStacks):
                 self.model.boxStacks[self.myBox.pos] = 1
+                self.myBox.height = 0.0
                 self.myBox.isStacked = True
                 self.myBox = None
                 self.model.boxesStacked += 1
@@ -86,7 +87,11 @@ class Robot(Agent):
                     # Ponemos la caja y actiualizamos sus valores
                     self.model.grid.move_agent(self.myBox, bestMove[1])
                     self.myBox.isStacked = True
+                    self.myBox.isMoving = False
                     
+                    # Aumentamos la altura de la caja
+                    self.myBox.height = self.model.boxStacks[bestMove[1]]
+
                     # Sumamos 1 elemento a dicha stack
                     self.model.boxStacks[bestMove[1]] += 1
                     # Aumentamos el número de cajas en stacks
@@ -98,6 +103,9 @@ class Robot(Agent):
 
                     self.model.totalMoves -= 1
                     return self.pos
+
+                # Hacemos que la caja se mueva con nosotros
+                self.model.grid.move_agent(self.myBox, bestMove[1])
                 
                 return bestMove[1]
 
@@ -120,8 +128,9 @@ class Box(Agent):
      def __init__(self, model, pos):
         super().__init__(model.next_id(), model)
         self.pos = pos
-        self.wasTaken = False
+        self.isMoving = False
         self.isStacked = False
+        self.height = 0
 
 class Floor(Model):
 

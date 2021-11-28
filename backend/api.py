@@ -33,6 +33,7 @@ def queryState(id):
             boxes.append({
                 "x": float(agent.pos[0]), 
                 "y": float(agent.pos[1]), 
+                "height": float(agent.height)
             })
 
     return jsonify({"robots": robots, "boxes": boxes})
