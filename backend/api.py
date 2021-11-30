@@ -36,7 +36,12 @@ def queryState(id):
                 "height": float(agent.height)
             })
 
-    return jsonify({"robots": robots, "boxes": boxes})
+    stacks = []
+
+    for stack in model.boxStacks.keys():
+        stacks.append({"x": stack[0], "y": stack[1]})
+
+    return jsonify({"robots": robots, "boxes": boxes, "stacks": stacks})
 
 
 app.run()
