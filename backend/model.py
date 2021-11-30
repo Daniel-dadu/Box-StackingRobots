@@ -134,13 +134,16 @@ class Box(Agent):
 
 class Floor(Model):
 
-    def __init__(self, cantidadCajas = 15, tiempoMaximo = 30):
+    def __init__(self, cantidadCajas = 15, tiempoMaximo = 60):
         super().__init__()
         self.schedule = RandomActivation(self)
 
         # Establecemos el tamaño del Grid de 20x20
         self.x = 20
         self.y = 20
+
+        # Usamos un MultiGrid para poder colocar múltiples agentes en una misma celda
+        self.grid = MultiGrid(self.x, self.y, torus=False)
 
         # Creamos el diccionario que guardará en su key la posición de la stack y en su value la cantidad de cajas que tiene dicha stack
         self.boxStacks = {}
@@ -154,9 +157,6 @@ class Floor(Model):
 
         # Calculamos la cantidad de stacks necesarias para el número de cajas ingresado
         self.amountStacks = self.amountBoxes // amountRobots + (0 if self.amountBoxes%amountRobots == 0 else 1)
-
-        # Usamos un MultiGrid para poder colocar múltiples agentes en una misma celda
-        self.grid = MultiGrid(self.x, self.y, torus=False)
 
         # Variable tipo flag que será True cuando se ejecute el primer step de la simulación
         self.simulationStarted = False
@@ -188,10 +188,10 @@ class Floor(Model):
                 self.schedule.add(robot)
                 count += 1
             else:
-                # llamamos a la clase Box y la instanciamos con las coordenadas de la matriz declarada.
+                # llamamos a la clase Box y la instanciamos con las coordenadas calculadas
                 box = Box(self, (posX, posY))
                 self.schedule.add(box)
-                # enviamos como parametro a la clase place_agent para que se muestre en el navegador
+                # ponemos la nueva caja en el grid
                 self.grid.place_agent(box, box.pos)
           
 

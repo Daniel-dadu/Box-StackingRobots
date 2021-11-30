@@ -28,6 +28,7 @@ def queryState(id):
             robots.append({
                 "x": float(agent.pos[0]), 
                 "y": float(agent.pos[1]), 
+                "hasBox" : agent.myBox != None
             })
         else:
             boxes.append({
@@ -41,7 +42,12 @@ def queryState(id):
     for stack in model.boxStacks.keys():
         stacks.append({"x": stack[0], "y": stack[1]})
 
-    return jsonify({"robots": robots, "boxes": boxes, "stacks": stacks})
+    return jsonify({
+        "robots": robots, 
+        "boxes": boxes, 
+        "stacks": stacks, 
+        "isRunning": model.running
+    })
 
 
 app.run()
