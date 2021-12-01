@@ -29,8 +29,8 @@ class Robot(Agent):
         self.model.totalMoves += 1
 
     def getMove(self, next_moves):
-        # Si no han sido creadas las stacks suficientes, creamos otra con esa caja (en su posición actual)
 
+        # Si no han sido creadas las stacks suficientes, creamos otra con esa caja (en su posición actual)
         if(self.myBox == None):
             posibleMoves = []
             for move in next_moves:
@@ -50,7 +50,7 @@ class Robot(Agent):
             try:
                 posibleMoves.remove(self.lastPos)
             except:
-                '''It was not possible to move to the lastPos'''
+                '''It was not possible to remove the lastPos'''
 
             self.lastPos = self.pos
 
@@ -123,13 +123,19 @@ class Robot(Agent):
         return minDistance[1]
             
 
-# Usamos esta clase para crear las celdas sucias (las identificamos como agentes sin movimiento) 
+# Usamos esta clase para definir una Caja 
 class Box(Agent):
      def __init__(self, model, pos):
         super().__init__(model.next_id(), model)
         self.pos = pos
+        
+        # Atributo que indica si la caja está en movimiento
         self.isMoving = False
+        
+        # Atributo que indica si la caja ya está apilada
         self.isStacked = False
+        
+        # Atributo que indica la altura a la que se encuentra (necesario para Unity)
         self.height = 0
 
 class Floor(Model):
@@ -161,10 +167,10 @@ class Floor(Model):
         # Variable tipo flag que será True cuando se ejecute el primer step de la simulación
         self.simulationStarted = False
 
-        # Atributo que indica el tiempo en el que inicia la simulación
+        # Establecemos el tiempo en el que inicia la simulación
         self.startTime = 0
 
-        # Establecemos que el tiempo máximo de la simulación sea de 30 segundos
+        # Establecemos el tiempo máximo de la simulación 
         self.maxTime = tiempoMaximo
 
         # Declaramos la variable que nos indica el tiempo actual que lleva la simulación
@@ -181,17 +187,18 @@ class Floor(Model):
         for i in randomNumsList:
             posY = i // self.x
             posX = i % self.x
+
             # Primero creamos los 5 robots
             if(count < amountRobots):
                 robot = Robot(self, (posX, posY))
                 self.grid.place_agent(robot, robot.pos)
                 self.schedule.add(robot)
                 count += 1
+            
+            # Luego creamos las cajas
             else:
-                # llamamos a la clase Box y la instanciamos con las coordenadas calculadas
                 box = Box(self, (posX, posY))
                 self.schedule.add(box)
-                # ponemos la nueva caja en el grid
                 self.grid.place_agent(box, box.pos)
           
 
@@ -203,6 +210,6 @@ class Floor(Model):
         self.schedule.step()        
         self.actualTime = round(time.time() - self.startTime)
 
-        # Si el tiempo actual sobrepasa el tiempo en el que debe terminar la simulación, se detiene la simulación
+        # Si el tiempo actual sobrepasa el tiempo en el que debe terminar la simulación o se apilaron todas las cajas, se detiene la simulación
         if(self.startTime + self.maxTime < time.time() or self.boxesStacked == self.amountBoxes):
             self.running = False
