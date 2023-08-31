@@ -6,4 +6,4 @@ The frontend was created using Unity and 3D objects, including robots, boxes, sh
 
 For a comprehensive understanding of each project component and a live demonstration of the simulation, please refer to the explanatory video: [https://www.youtube.com/watch?v=B50ad7ZO-80](https://youtu.be/B50ad7ZO-80)
 
-You can also learn more about it reading the PDF: *Diagramas_Estrategia_Mejoras.pdf*
+You can also learn more about it reading the PDF: [Diagramas_Estrategia_Mejoras.pdf](Diagramas_Estrategia_Mejoras.pdf)
